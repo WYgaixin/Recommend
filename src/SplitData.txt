@@ -1,0 +1,33 @@
+def SplitData(M,k,seed):
+    for line in open('u.data'):
+        user,item,record,time=line.split()
+        data.append([int(user),int(item),int(record),long(time)])
+        
+    for user,item,record,time in data:
+        timeset.setdefault(item,[])
+        timeset[item].append(time) #记录电影的时间
+    
+    for item in timeset:
+        timeminset[item]=sorted(timeset[item])[0] #找到电影最早评论的时间，看做是电影的上映时间，即最早时间
+        
+    random.seed(seed)
+    for user,item,record,time in data:
+        if random.randint(0,M) == k:
+            test.append((user,item,record,time))
+        else:
+            train.append((user,item,record,time))
+        
+#    for user,item,record,time in data:
+#        if time-timeminset[item]<60*24*60*60: #将电影按时间分类
+#            newmovie.setdefault(user,{})
+#            newmovie[user][item]=record
+#            
+#        else:
+#            oldmovie.setdefault(user,{})
+#            oldmovie[user][item]=record
+    
+    print "data number：",len(data)
+    print "train number：",len(train)
+    print "test numer",len(test)
+#    print timeminset
+    return data,train,test,dict(timeset),dict(timeminset)
