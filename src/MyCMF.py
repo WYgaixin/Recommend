@@ -185,27 +185,40 @@ def TestDataRMSE(F):
             if((u in p) and (i in qnew)): 
 #               rmse += float((record - predictqnew(u,i,F)) * (record - predictqnew(u,i,F)))
                rmse += float(math.pow((record - predictqnew(u,i,F)),2))
-               m += float(math.fabs(record-predictqnew(u,i,F)))
+            else:
+                continue
+#               m += float(math.fabs(record-predictqnew(u,i,F)))
         else:
             if((u in p) and (i in qold)):
                 rmse += float(math.pow((record - predictqold(u,i,F)),2))
-                m += float(math.fabs(record-predictqold(u,i,F)))
+            else:
+                continue
+#                m += float(math.fabs(record-predictqold(u,i,F)))
 #                rmse += float((record - predictqold(u,i,F)) * (record - predictqold(u,i,F)))
-    rmse = math.sqrt(rmse) / float(len(test))
-    m =m / float(len(test))
-    print 'm',m
+    rmse = math.sqrt(rmse / float(len(test)))
+#    m =m / float(len(test))
+#    print 'm',m
     return rmse 
 
 def MAE(F):
     mae=0.0
+    count = 0
     for u,i,record,time in test:
+        count+=1
         if time-timeminset[i]<60*24*60*60:#新电影
             if((u in p) and (i in qnew)):
                 mae += float(math.fabs(record-predictqnew(u,i,F)))
+            else:
+                continue
         else:
             if ((u in p) and (i in qold)):
                 mae += float(math.fabs(record-predictqold(u,i,F)))
-    mae=mae/float(len(test))
+            else:
+                continue
+#    mae=mae/float(len(test))
+    mae=mae/count
+    print 'len(test)',len(test)
+    print 'count',count
     return mae 
 #def learningCMF(data,oldmovie,newmovie,n,alpha,lambd,w,F):
 #    print "diedaicishu",n
@@ -271,7 +284,7 @@ if __name__ == '__main__':
 #            print qnew[i]
 #            e+=1
 #    print e
-    p,qnew,qold=learningCMF2(1,0.005,0.01,0.5,80)
+    p,qnew,qold=learningCMF2(160,0.005,0.01,0.1,80)#n,alpha,lambd,w,F):
     rmse=TestDataRMSE(5)
     print "F:",80
     print "the rmse is:",rmse
