@@ -63,6 +63,25 @@ def InitCMF(F): #初始化特征向量，F个隐类
             
 #    print 'dddd',qnew.get('1497')
     return p,qnew,qold
+
+def InitCMFmu(F):
+    for u,i,record,time in train:
+        bunew[u]=0
+        binew[i]=0
+        buold[u]=0
+        biold[i]=0
+        if time-timeminset[i]<60*24*60*60:
+            if u not in p:
+                p[u]=[random.random()/math.sqrt(F) for x in range(0,F)]
+            if i not in qnew:
+                qnew[i]=[random.random()/math.sqrt(F) for x in range(0,F)]
+        else:
+            if u not in p:
+                p[u]=[random.random()/math.sqrt(F) for x in range(0,F)]
+            if i not in qold:
+                qold[i]=[random.random()/math.sqrt(F) for x in range(0,F)]
+    return p,qold,qnew,bunew,binew,buold,biold
+    
                 
 
     
@@ -88,6 +107,17 @@ def predictqold(u,i,F):# 预测评分
 def predictqnew(u,i,F):# 预测评分
     ret=sum(p[u][f]*qnew[i][f] for f in range(0,len(p[u]))) 
     return ret
+
+def Predictold(u,i,F,buold,biold,mu):
+    ret = mu + buold[u] + biold[i]
+    ret += sum(p[u][f] * qold[i][f] for f in range(0,len(p[u])))
+    return ret
+    
+def Predictnew(u,i,F,bunew,binew,mu):
+    ret = mu + bunew[u] + binew[i]
+    ret += sum(p[u][f]*qnew[i][f] for f in range(0,len(p[u])))
+    return ret
+    
 #    if i=='242':
 #        print 'qnew is',qnew.get(i)      
 #    rat=0.0
@@ -147,7 +177,6 @@ def learningCMF2(n,alpha,lambd,w,F):
     print "lambd",lambd
    
     p,qnew,qold=InitCMF(F)
-    print ('******************************')
 #    print ('1497 value is',qnew['1497'])
     
     for step in range(0,n):
@@ -177,6 +206,49 @@ def learningCMF2(n,alpha,lambd,w,F):
 
     alpha*=0.9
     return p,qnew,qold
+
+def learningCMF3(n,alpha,lambd,w,F,mu):
+    print 'n:',n
+    print 'alpha:',alpha
+    print 'lambd:',lambd
+    print 'w:',w
+    print 'F:',F
+    print 'mu:',mu
+    p,qold,qnew,bunew,binew,buold,biold = InitCMFmu(F)
+    for step in range(0,n):
+        for u,i,record,time in train:
+            if time-timeminset[i]<60*24*60*60:
+                pui=Predictnew(u,i,F,bunew,binew,mu)
+                eui=record-pui
+                bunew[u] +=alpha*(eui-lambd*bunew[u])
+                binew[i] +=alpha*(eui-lambd*binew[i])
+                for k in range(0,F):
+                    qnew[i][k]+=alpha*(eui*p[u][k]-lambd*qnew[i][k])              
+                    if i not in qold:
+                        p[u][k]+=alpha*((1-w)*eui*qnew[i][k]-lambd*p[u][k])                        
+                    else:
+                        p[u][k]+=alpha*((qold[i][k]*eui*w)+(1-w)*eui*qnew[i][k]-lambd*p[u][k])
+            else:
+                pui=Predictold(u,i,F,buold,biold,mu)
+                eui=record-pui
+                buold[u] +=alpha*(eui-lambd*buold[u])
+                biold[i] +=alpha*(eui-lambd*biold[i])
+                for k in range(0,F):
+                    qold[i][k]+=alpha*(eui*p[u][k]-lambd*qold[i][k])
+                    if i in qnew:
+                        p[u][k]+=alpha*((qold[i][k]*eui*w)+(1-w)*eui*qnew[i][k]-lambd*p[u][k])
+                    
+                    else:
+                        p[u][k]+=alpha*((qold[i][k]*eui*w)-lambd*p[u][k])
+    alpha*=0.9
+    return p,qnew,qold,bunew,binew,buold,biold
+                    
+                
+           
+                       
+                    
+    
+    
         
 def TestDataRMSE(F):
     rmse = 0.0
@@ -215,7 +287,6 @@ def MAE(F):
                 mae += float(math.fabs(record-predictqold(u,i,F)))
             else:
                 continue
-#    mae=mae/float(len(test))
     mae=mae/count
     print 'len(test)',len(test)
     print 'count',count
@@ -263,10 +334,19 @@ if __name__ == '__main__':
     data=[]
     train=[]
     test=[]
+    bunew=dict()
+    binew=dict()
+    buold=dict()
+    biold=dict()
+    mu=0
   
     timeset={}
     timeminset={}
     data,train,test,timeset,timeminset=SplitData(8,1,1)
+    p,qnew,qold,bunew,binew,buold,biold=learningCMF3(1,0.005,0.01,0.5,50,0)#n,alpha,lambd,w,F,mu
+    
+    print bunew
+    
 #    e=0
 #    for u,i,record,time in qnew:
 #         if i=='1497':
@@ -284,12 +364,12 @@ if __name__ == '__main__':
 #            print qnew[i]
 #            e+=1
 #    print e
-    p,qnew,qold=learningCMF2(160,0.005,0.01,0.1,80)#n,alpha,lambd,w,F):
-    rmse=TestDataRMSE(5)
-    print "F:",80
-    print "the rmse is:",rmse
-    mae=MAE(5)
-    print "the mae is:",mae
+#    p,qnew,qold=learningCMF2(10,0.005,0.01,0.1,80)#n,alpha,lambd,w,F):
+#    rmse=TestDataRMSE(5)
+#    print "F:",80
+#    print "the rmse is:",rmse
+#    mae=MAE(5)
+#    print "the mae is:",mae
      
 #    newmovie,oldmovie,data=SplitData()
 #    p,qold,qnew=InitCMF(oldmovie,newmovie,data,50)
