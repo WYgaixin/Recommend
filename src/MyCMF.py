@@ -207,7 +207,7 @@ def learningCMF2(n,alpha,lambd,w,F):
     alpha*=0.9
     return p,qnew,qold
 
-def learningCMF3(n,alpha,lambd,w,F,mu):
+def learningCMF3(n,alpha,lambd,w,F,mu):#加入后偏置向
     print 'n:',n
     print 'alpha:',alpha
     print 'lambd:',lambd
@@ -272,6 +272,23 @@ def TestDataRMSE(F):
 #    print 'm',m
     return rmse 
 
+def RMSE(F):
+    rmse=0.0
+    for u,i,record,time in test:
+        if time-timeminset[i]<60*24*60*60:
+            if((u in p) and (i in qnew)):
+                rmse += float(math.pow((record-Predictnew(u,i,F,bunew,binew,mu)),2))
+            else:
+                continue
+        else:
+            if((u in p) and (i in qold)):
+                rmse +=float(math.pow((record-Predictold(u,i,F,buold,biold,mu)),2))
+            else:
+                continue
+    rmse =math.sqrt(rmse/float(len(test)))
+    return rmse   
+    
+
 def MAE(F):
     mae=0.0
     count = 0
@@ -291,6 +308,26 @@ def MAE(F):
     print 'len(test)',len(test)
     print 'count',count
     return mae 
+    
+def MAP(F):
+    mp=0.0
+    rc=0.0
+    for u,i,record,time in test:
+        if time-timeminset[i]<60*24*60*60:
+            if((u in p) and (i in qnew)):
+                mp += float(math.fabs(record-predictqnew(u,i,F)))
+                rc+=record
+            else:
+                continue
+        else:
+            if((u in p) and (i in qold)):
+                mp +=float(math.fabs(record-predictqold(u,i,F)))
+                rc+=record
+            else:
+                continue
+    mp=mp/rc
+    return mp
+            
 #def learningCMF(data,oldmovie,newmovie,n,alpha,lambd,w,F):
 #    print "diedaicishu",n
 #    print "quanzhong",w
@@ -343,10 +380,12 @@ if __name__ == '__main__':
     timeset={}
     timeminset={}
     data,train,test,timeset,timeminset=SplitData(8,1,1)
-    p,qnew,qold,bunew,binew,buold,biold=learningCMF3(1,0.005,0.01,0.5,50,0)#n,alpha,lambd,w,F,mu
-    
-    print bunew
-    
+#    p,qnew,qold,bunew,binew,buold,biold=learningCMF3(10,0.005,0.01,0.5,50,0)#n,alpha,lambd,w,F,mu
+#    
+#    rmse=RMSE(5)
+#   
+#    print 'rmse:',rmse
+#    
 #    e=0
 #    for u,i,record,time in qnew:
 #         if i=='1497':
@@ -364,7 +403,10 @@ if __name__ == '__main__':
 #            print qnew[i]
 #            e+=1
 #    print e
-#    p,qnew,qold=learningCMF2(10,0.005,0.01,0.1,80)#n,alpha,lambd,w,F):
+    p,qnew,qold=learningCMF2(10,0.005,0.01,0.1,80)#n,alpha,lambd,w,F):
+    mp=MAP(5)
+    print 'mp:',mp 
+    
 #    rmse=TestDataRMSE(5)
 #    print "F:",80
 #    print "the rmse is:",rmse
