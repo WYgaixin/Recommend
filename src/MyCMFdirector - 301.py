@@ -99,7 +99,7 @@ def predictdirectorold(u,i,d,F):
 def predictdirectornew(u,i,d,F):
     if u not in p:
         ret=0.0
-    elif i not in qold:
+    elif i not in qnew:
         ret=0.0
     elif d not in s:
         ret=0.0
@@ -279,7 +279,7 @@ def RMSE(F):#加入导演后
             else:
                 pass
                 
-    rmse = math.sqrt(rmse)/float(len(test))
+    rmse = math.sqrt(rmse/float(len(test)))
     return rmse
 
 def MAE(F):
@@ -418,7 +418,7 @@ if __name__ == '__main__':
 #    RecommendItems(5,4,0.2)
          
 
-    learningCMF3(1,0.005,0.01,0.5,10)
+    learningCMF3(10,0.005,0.01,0.5,10)
     
     
 #    RecommendItems(5,4,0.2)
